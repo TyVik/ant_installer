@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="installer" default="all">
+  <property file="project.properties"/>
+
+  <property name="build" value="temp"/>
+  <property name="distrib" value="distrib"/>
+  <property name="filename" value="installer.jar"/>
+
+  <path id="java-classpath">
+    <fileset dir="${ant_dir}\lib">
+      <include name="*.jar"/>
+    </fileset>
+  </path>
+
+  <target name="clean">
+    <delete dir="${build}"/>
+    <delete dir="${distrib}"/>
+  </target>
+
+  <target name="prepare" depends="clean">
+    <mkdir dir="${build}"/>
+    <mkdir dir="${distrib}"/>
+  </target>
+
+  <target name="compile" depends="prepare">
+    <javac srcdir="src" destdir="${build}" includeantruntime="false" encoding="UTF-8" classpathref="java-classpath">
+      <compilerarg value="-Xlint"/>
+    </javac>
+    <copy file="src/java/com/ps/installer/antlib.xml" tofile="${build}/com/ps/installer/antlib.xml" overwrite="true"/>
+    <jar destfile="${distrib}/${filename}" basedir="${build}"/>
+  </target>
+
+  <target name="deploy">
+    <copy file="${distrib}/${filename}" tofile="${ant_dir}\lib\${filename}" overwrite="true"/>
+  </target>
+
+  <target name="all" depends="compile,deploy"/>
+</project>

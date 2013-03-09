@@ -1,0 +1,5 @@
+<?xml version="1.0"?>
+<antlib>
+    <!-- Tasks for PS utilities -->
+    <taskdef name="compile_operation" classname="com.ps.installer.CompileOperation"/>
+</antlib>

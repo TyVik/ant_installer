@@ -1,0 +1,76 @@
+<project basedir='../..' default="all" xmlns:ora="antlib:net.sf.incanto" xmlns:ps="antlib:com.ps.installer">
+
+    <property file="Source/ant/main.properties"/>
+
+    <path id="java-classpath">
+        <fileset dir="Source/ant/bin/lib">
+            <include name="*.jar"/>
+        </fileset>
+    </path>
+
+    <target name="clean">
+        <delete dir="${distrib}"/>
+    </target>
+
+    <target name="compile_operations">
+        <ps:compile_operation dir="Source/schema_user/operations_common" file="Source/ant/operations_common.xml"/>
+        <ps:compile_operation dir="Source/schema_user/operations" file="Source/ant/operations.xml"/>
+        <xslt in="Source/ant/operations.xml" out="${distrib}/schema_user/operations.sql" style="Source/ant/hopxml2sql.xsl" classpathref="java-classpath"/>
+        <xslt in="Source/ant/operations_common.xml" out="${distrib}/schema_user/operations_common.sql" style="Source/ant/hopxml2sql.xsl" classpathref="java-classpath"/>
+    </target>
+
+    <target name="copy">
+        <copy todir='${distrib}/'>
+            <fileset dir="Source">
+                <exclude name="ant/"/>
+                <exclude name="bin/"/>
+                <exclude name="old/"/>
+                <exclude name="**/*.bat"/>
+                <exclude name="*.sql"/>
+                <exclude name="*.txt"/>
+                <exclude name="**/*.log"/>
+                <exclude name="**/operations_common/"/>
+                <exclude name="**/operations/"/>
+                <exclude name="**/old/"/>
+            </fileset>
+        </copy>
+    </target>
+
+    <!-- осторожно! полностью не понял как это работает -->
+    <target name="wrap" unless="debug">
+        <apply executable="wrap" dir="${distrib}" dest="${distrib}" force="true" verbose="true">
+            <arg value="iname="/>
+            <srcfile/>
+            <arg value="oname="/>
+            <targetfile/>
+            <fileset dir="Source">
+                <include name="schema_owner/kernel_*.sql"/>
+                <include name="schema_owner/library_*.sql"/>
+                <include name="schema_owner/custom_*.sql"/>
+                <include name="schema_owner/source_*.sql"/>
+                <include name="schema_owner/setup.sql"/>
+            </fileset>
+            <mapper type="identity"/>
+        </apply>
+    </target>
+
+    <target name="install">
+        <!-- Порядок критичен! -->
+        <ora:sqlplus logon="${user}/${password}@${db}" dir="${distrib}/schema_user" start="setup_master.sql">
+            <arg value="Y"/>
+            <arg value="Y"/>
+            <arg value="Y"/>
+            <arg value="Y"/>
+        </ora:sqlplus>
+        <ora:sqlplus logon="${master_user}/${master_password}@${master_db}" dir="${distrib}/schema_owner" start="setup.sql">
+            <arg value="Y"/>
+            <arg value="Y"/>
+            <arg value="Y"/>
+        </ora:sqlplus>
+        <ora:sqlplus logon="${user}/${password}@${db}" dir="${distrib}/schema_user" start="setup.sql"/>
+        <ora:sqlplus logon="${user}/${password}@${db}" dir="${distrib}/schema_user" start="setup_others.sql"/>
+    </target>
+
+    <target name="all" depends="clean,compile_operations,copy,wrap">
+    </target>
+</project>
